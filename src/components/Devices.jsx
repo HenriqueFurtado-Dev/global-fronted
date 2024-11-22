@@ -12,6 +12,7 @@ import {
   Col,
 } from 'react-bootstrap';
 import './Devices.css';
+import { extractEmbeddedData } from '../utils/apiHelper'; // Import do helper
 
 const Devices = () => {
   const [devices, setDevices] = useState([]);
@@ -37,38 +38,35 @@ const Devices = () => {
     setLoading(true);
     try {
       const response = await api.get('/dispositivos');
-      const data = response.data;
-      
-      // Verifica se a resposta contém '_embedded.dispositivos' e se é um array
-      if (data._embedded && Array.isArray(data._embedded.dispositivos)) {
-        setDevices(data._embedded.dispositivos);
-      } else if (Array.isArray(data)) {
-        // Caso a resposta seja um array direto
-        setDevices(data);
-      } else {
-        console.error('A API não retornou um array de dispositivos:', data);
-        setDevices([]); // Define um array vazio se os dados não estiverem no formato esperado
-      }
+      console.log('Resposta da API (Dispositivos):', response.data); // Log para depuração
+      const devicesArray = extractEmbeddedData(response.data, 'dispositivoConsumoList'); // Ajuste a chave conforme necessário
+      setDevices(devicesArray);
     } catch (error) {
       console.error('Erro ao buscar dispositivos:', error.response || error);
       setMessage({
         type: 'danger',
         text: error.response?.data?.message || 'Erro ao buscar dispositivos.',
       });
-      setDevices([]); // Define um array vazio no caso de erro
+      setDevices([]);
     } finally {
       setLoading(false);
     }
   };
-  
-  
 
   const handleSave = async () => {
-    if (!device.nomeDispositivo || !device.tipoDispositivo || !device.localizacao) {
+    // Validação dos campos obrigatórios
+    if (
+      !device.nomeDispositivo ||
+      !device.tipoDispositivo ||
+      !device.localizacao ||
+      !device.consumoEnergiaKwh ||
+      !device.usuarioId
+    ) {
       setMessage({ type: 'danger', text: 'Preencha todos os campos obrigatórios.' });
       return;
     }
-  
+
+    setLoading(true);
     try {
       if (editId) {
         await api.put(`/dispositivos/${editId}`, device);
@@ -77,7 +75,7 @@ const Devices = () => {
         await api.post('/dispositivos', device);
         setMessage({ type: 'success', text: 'Dispositivo criado com sucesso!' });
       }
-      fetchDevices();
+      await fetchDevices();
       setShowModal(false);
       setDevice({
         nomeDispositivo: '',
@@ -89,26 +87,49 @@ const Devices = () => {
       });
       setEditId(null);
     } catch (error) {
-      console.error('Erro ao salvar dispositivo:', error);
-      setMessage({ type: 'danger', text: 'Erro ao salvar dispositivo.' });
+      console.error('Erro ao salvar dispositivo:', error.response || error);
+      setMessage({
+        type: 'danger',
+        text: error.response?.data?.message || 'Erro ao salvar dispositivo.',
+      });
+    } finally {
+      setLoading(false);
     }
   };
-  
 
   const handleDelete = async (id) => {
+    setLoading(true);
     try {
       await api.delete(`/dispositivos/${id}`);
       setMessage({ type: 'success', text: 'Dispositivo excluído com sucesso!' });
-      fetchDevices();
+      await fetchDevices();
     } catch (error) {
-      console.error('Erro ao deletar dispositivo:', error);
-      setMessage({ type: 'danger', text: 'Erro ao excluir dispositivo.' });
+      console.error('Erro ao deletar dispositivo:', error.response || error);
+      setMessage({
+        type: 'danger',
+        text: error.response?.data?.message || 'Erro ao excluir dispositivo.',
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
   const openEditModal = (device) => {
     setDevice(device);
     setEditId(device.id);
+    setShowModal(true);
+  };
+
+  const openAddModal = () => {
+    setDevice({
+      nomeDispositivo: '',
+      tipoDispositivo: '',
+      localizacao: '',
+      consumoEnergiaKwh: '',
+      status: 'DESLIGADO',
+      usuarioId: '',
+    });
+    setEditId(null);
     setShowModal(true);
   };
 
@@ -128,7 +149,7 @@ const Devices = () => {
 
       <Row className="mb-3">
         <Col className="text-right">
-          <Button variant="primary" onClick={() => setShowModal(true)}>
+          <Button variant="primary" onClick={openAddModal}>
             <i className="fas fa-plus-circle"></i> Adicionar Dispositivo
           </Button>
         </Col>
@@ -181,16 +202,13 @@ const Devices = () => {
               </tr>
             )}
           </tbody>
-
         </Table>
       )}
 
       {/* Modal para Adicionar/Editar Dispositivo */}
       <Modal show={showModal} onHide={() => setShowModal(false)} size="lg">
         <Modal.Header closeButton>
-          <Modal.Title>
-            {editId ? 'Editar Dispositivo' : 'Adicionar Dispositivo'}
-          </Modal.Title>
+          <Modal.Title>{editId ? 'Editar Dispositivo' : 'Adicionar Dispositivo'}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form>
@@ -266,8 +284,8 @@ const Devices = () => {
           <Button variant="secondary" onClick={() => setShowModal(false)}>
             Cancelar
           </Button>
-          <Button variant="success" onClick={handleSave}>
-            {editId ? 'Atualizar' : 'Salvar'}
+          <Button variant="success" onClick={handleSave} disabled={loading}>
+            {loading ? <Spinner size="sm" animation="border" /> : editId ? 'Atualizar' : 'Salvar'}
           </Button>
         </Modal.Footer>
       </Modal>

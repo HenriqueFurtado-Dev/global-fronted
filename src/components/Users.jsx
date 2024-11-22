@@ -12,6 +12,7 @@ import {
   Col,
 } from 'react-bootstrap';
 import './Users.css'; // Importar estilos personalizados
+import { extractEmbeddedData } from '../utils/apiHelper'; // Import do helper
 
 const Users = () => {
   const [users, setUsers] = useState([]);
@@ -31,16 +32,8 @@ const Users = () => {
     try {
       const response = await api.get('/usuarios');
       console.log('Resposta da API (Usuarios):', response.data); // Log para depuração
-      const data = response.data;
-
-      if (data._embedded && Array.isArray(data._embedded.usuarioList)) {
-        setUsers(data._embedded.usuarioList);
-      } else if (Array.isArray(data)) {
-        setUsers(data);
-      } else {
-        console.error('A API não retornou um array de usuários:', data);
-        setUsers([]);
-      }
+      const usersArray = extractEmbeddedData(response.data, 'usuarioList');
+      setUsers(usersArray);
     } catch (error) {
       console.error('Erro ao buscar usuários:', error.response || error);
       setMessage({
