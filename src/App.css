@@ -36,3 +36,34 @@
     transform: rotate(360deg);
   }
 }
+
+.container {
+  background-color: #f8f9fa;
+  padding: 30px;
+  border-radius: 8px;
+  margin-top: 20px;
+}
+
+.header {
+  margin-bottom: 40px;
+}
+
+.logo {
+  width: 150px;
+  margin-bottom: 20px;
+}
+
+h1 {
+  font-size: 2.5rem;
+  color: #343a40;
+}
+
+p.lead {
+  font-size: 1.2rem;
+  color: #6c757d;
+}
+
+p {
+  font-size: 1rem;
+  color: #6c757d;
+}

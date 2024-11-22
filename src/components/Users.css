@@ -1,0 +1,22 @@
+.users-container {
+    margin-top: 20px;
+  }
+  
+  .users-table th,
+  .users-table td {
+    vertical-align: middle;
+  }
+  
+  .users-table .text-center {
+    text-align: center;
+  }
+  
+  .users-table .btn {
+    margin: 0 2px;
+  }
+  
+  thead.thead-dark th {
+    background-color: #343a40;
+    color: #fff;
+  }
+  

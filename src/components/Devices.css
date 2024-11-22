@@ -1,0 +1,22 @@
+.devices-container {
+    margin-top: 20px;
+  }
+  
+  .devices-table th,
+  .devices-table td {
+    vertical-align: middle;
+  }
+  
+  .devices-table .text-center {
+    text-align: center;
+  }
+  
+  .devices-table .btn {
+    margin: 0 2px;
+  }
+  
+  thead.thead-dark th {
+    background-color: #343a40;
+    color: #fff;
+  }
+  
