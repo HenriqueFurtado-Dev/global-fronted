@@ -7,8 +7,8 @@ WORKDIR /app
 # Copiar apenas os arquivos necessários para instalar dependências
 COPY package.json package-lock.json ./
 
-# Instalar apenas dependências de produção
-RUN npm install --production
+# Instalar todas as dependências (incluindo devDependencies)
+RUN npm install
 
 # Copiar todo o restante do código
 COPY . .
@@ -24,6 +24,9 @@ RUN rm -rf /usr/share/nginx/html/*
 
 # Copiar os arquivos estáticos do build para o diretório do NGINX
 COPY --from=build /app/build /usr/share/nginx/html
+
+# Ajustar permissões (opcional, mas recomendado)
+RUN chmod -R 755 /usr/share/nginx/html
 
 # Expor a porta 80
 EXPOSE 80
