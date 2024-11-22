@@ -30,16 +30,37 @@ const Users = () => {
     setLoading(true);
     try {
       const response = await api.get('/usuarios');
-      setUsers(response.data);
+      console.log('Resposta da API (Usuarios):', response.data); // Log para depuração
+      const data = response.data;
+
+      if (data._embedded && Array.isArray(data._embedded.usuarioList)) {
+        setUsers(data._embedded.usuarioList);
+      } else if (Array.isArray(data)) {
+        setUsers(data);
+      } else {
+        console.error('A API não retornou um array de usuários:', data);
+        setUsers([]);
+      }
     } catch (error) {
-      console.error('Erro ao buscar usuários:', error);
-      setMessage({ type: 'danger', text: 'Erro ao buscar usuários.' });
+      console.error('Erro ao buscar usuários:', error.response || error);
+      setMessage({
+        type: 'danger',
+        text: error.response?.data?.message || 'Erro ao buscar usuários.',
+      });
+      setUsers([]);
     } finally {
       setLoading(false);
     }
   };
 
   const handleSave = async () => {
+    // Validação dos campos obrigatórios
+    if (!user.nome || !user.email || !user.tipoConta) {
+      setMessage({ type: 'danger', text: 'Preencha todos os campos obrigatórios.' });
+      return;
+    }
+
+    setLoading(true);
     try {
       if (editId) {
         await api.put(`/usuarios/${editId}`, user);
@@ -48,30 +69,47 @@ const Users = () => {
         await api.post('/usuarios', user);
         setMessage({ type: 'success', text: 'Usuário criado com sucesso!' });
       }
-      fetchUsers();
+      await fetchUsers();
       setShowModal(false);
       setUser({ nome: '', email: '', tipoConta: '' });
       setEditId(null);
     } catch (error) {
-      console.error('Erro ao salvar usuário:', error);
-      setMessage({ type: 'danger', text: 'Erro ao salvar usuário.' });
+      console.error('Erro ao salvar usuário:', error.response || error);
+      setMessage({
+        type: 'danger',
+        text: error.response?.data?.message || 'Erro ao salvar usuário.',
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleDelete = async (id) => {
+    setLoading(true);
     try {
       await api.delete(`/usuarios/${id}`);
       setMessage({ type: 'success', text: 'Usuário excluído com sucesso!' });
-      fetchUsers();
+      await fetchUsers();
     } catch (error) {
-      console.error('Erro ao deletar usuário:', error);
-      setMessage({ type: 'danger', text: 'Erro ao excluir usuário.' });
+      console.error('Erro ao deletar usuário:', error.response || error);
+      setMessage({
+        type: 'danger',
+        text: error.response?.data?.message || 'Erro ao excluir usuário.',
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
   const openEditModal = (user) => {
     setUser(user);
     setEditId(user.id);
+    setShowModal(true);
+  };
+
+  const openAddModal = () => {
+    setUser({ nome: '', email: '', tipoConta: '' });
+    setEditId(null);
     setShowModal(true);
   };
 
@@ -91,10 +129,9 @@ const Users = () => {
 
       <Row className="mb-3">
         <Col className="text-right">
-        <Button variant="primary" onClick={() => setShowModal(true)}>
-          <i className="fas fa-user-plus"></i> Adicionar Usuário
-        </Button>
-
+          <Button variant="primary" onClick={openAddModal}>
+            <i className="fas fa-user-plus"></i> Adicionar Usuário
+          </Button>
         </Col>
       </Row>
 
@@ -114,30 +151,38 @@ const Users = () => {
             </tr>
           </thead>
           <tbody>
-            {users.map((user) => (
-              <tr key={user.id}>
-                <td>{user.id}</td>
-                <td>{user.nome}</td>
-                <td>{user.email}</td>
-                <td>{user.tipoConta}</td>
-                <td className="text-center">
-                  <Button
-                    variant="warning"
-                    size="sm"
-                    onClick={() => openEditModal(user)}
-                  >
-                    <i className="fas fa-edit"></i> Editar
-                  </Button>{' '}
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    onClick={() => handleDelete(user.id)}
-                  >
-                    <i className="fas fa-trash-alt"></i> Excluir
-                  </Button>
+            {Array.isArray(users) && users.length > 0 ? (
+              users.map((user) => (
+                <tr key={user.id}>
+                  <td>{user.id}</td>
+                  <td>{user.nome}</td>
+                  <td>{user.email}</td>
+                  <td>{user.tipoConta}</td>
+                  <td className="text-center">
+                    <Button
+                      variant="warning"
+                      size="sm"
+                      onClick={() => openEditModal(user)}
+                    >
+                      <i className="fas fa-edit"></i> Editar
+                    </Button>{' '}
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      onClick={() => handleDelete(user.id)}
+                    >
+                      <i className="fas fa-trash-alt"></i> Excluir
+                    </Button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="5" className="text-center">
+                  Nenhum usuário encontrado.
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </Table>
       )}
@@ -185,8 +230,8 @@ const Users = () => {
           <Button variant="secondary" onClick={() => setShowModal(false)}>
             Cancelar
           </Button>
-          <Button variant="success" onClick={handleSave}>
-            {editId ? 'Atualizar' : 'Salvar'}
+          <Button variant="success" onClick={handleSave} disabled={loading}>
+            {loading ? <Spinner size="sm" animation="border" /> : editId ? 'Atualizar' : 'Salvar'}
           </Button>
         </Modal.Footer>
       </Modal>

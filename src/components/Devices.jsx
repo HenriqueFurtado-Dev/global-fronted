@@ -37,16 +37,38 @@ const Devices = () => {
     setLoading(true);
     try {
       const response = await api.get('/dispositivos');
-      setDevices(response.data);
+      const data = response.data;
+      
+      // Verifica se a resposta contém '_embedded.dispositivos' e se é um array
+      if (data._embedded && Array.isArray(data._embedded.dispositivos)) {
+        setDevices(data._embedded.dispositivos);
+      } else if (Array.isArray(data)) {
+        // Caso a resposta seja um array direto
+        setDevices(data);
+      } else {
+        console.error('A API não retornou um array de dispositivos:', data);
+        setDevices([]); // Define um array vazio se os dados não estiverem no formato esperado
+      }
     } catch (error) {
-      console.error('Erro ao buscar dispositivos:', error);
-      setMessage({ type: 'danger', text: 'Erro ao buscar dispositivos.' });
+      console.error('Erro ao buscar dispositivos:', error.response || error);
+      setMessage({
+        type: 'danger',
+        text: error.response?.data?.message || 'Erro ao buscar dispositivos.',
+      });
+      setDevices([]); // Define um array vazio no caso de erro
     } finally {
       setLoading(false);
     }
   };
+  
+  
 
   const handleSave = async () => {
+    if (!device.nomeDispositivo || !device.tipoDispositivo || !device.localizacao) {
+      setMessage({ type: 'danger', text: 'Preencha todos os campos obrigatórios.' });
+      return;
+    }
+  
     try {
       if (editId) {
         await api.put(`/dispositivos/${editId}`, device);
@@ -71,6 +93,7 @@ const Devices = () => {
       setMessage({ type: 'danger', text: 'Erro ao salvar dispositivo.' });
     }
   };
+  
 
   const handleDelete = async (id) => {
     try {
@@ -130,34 +153,35 @@ const Devices = () => {
             </tr>
           </thead>
           <tbody>
-            {devices.map((device) => (
-              <tr key={device.id}>
-                <td>{device.id}</td>
-                <td>{device.nomeDispositivo}</td>
-                <td>{device.tipoDispositivo}</td>
-                <td>{device.localizacao}</td>
-                <td>{device.consumoEnergiaKwh}</td>
-                <td>{device.status}</td>
-                <td>{device.usuarioId}</td>
-                <td className="text-center">
-                  <Button
-                    variant="warning"
-                    size="sm"
-                    onClick={() => openEditModal(device)}
-                  >
-                    <i className="fas fa-edit"></i> Editar
-                  </Button>{' '}
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    onClick={() => handleDelete(device.id)}
-                  >
-                    <i className="fas fa-trash-alt"></i> Excluir
-                  </Button>
+            {Array.isArray(devices) && devices.length > 0 ? (
+              devices.map((device) => (
+                <tr key={device.id}>
+                  <td>{device.id}</td>
+                  <td>{device.nomeDispositivo}</td>
+                  <td>{device.tipoDispositivo}</td>
+                  <td>{device.localizacao}</td>
+                  <td>{device.consumoEnergiaKwh}</td>
+                  <td>{device.status}</td>
+                  <td>{device.usuarioId}</td>
+                  <td className="text-center">
+                    <Button variant="warning" size="sm" onClick={() => openEditModal(device)}>
+                      <i className="fas fa-edit"></i> Editar
+                    </Button>{' '}
+                    <Button variant="danger" size="sm" onClick={() => handleDelete(device.id)}>
+                      <i className="fas fa-trash-alt"></i> Excluir
+                    </Button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="8" className="text-center">
+                  Nenhum dispositivo encontrado.
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
+
         </Table>
       )}
 
