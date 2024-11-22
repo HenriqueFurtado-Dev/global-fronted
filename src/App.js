@@ -1,7 +1,10 @@
+// src/App.jsx
+
 import React from 'react';
 import { Tabs, Tab } from 'react-bootstrap';
 import Users from './components/Users';
 import Devices from './components/Devices';
+import Relatorios from './components/Relatorios'; // Import do componente Relatórios
 import './App.css'; // CSS personalizado
 import 'bootstrap/dist/css/bootstrap.min.css'; // Importar estilos do Bootstrap
 import logo from './assets/logo.jpeg'; // Substitua pelo caminho do seu logo
@@ -29,6 +32,11 @@ function App() {
         {/* Aba de Dispositivos */}
         <Tab eventKey="devices" title="Dispositivos">
           <Devices />
+        </Tab>
+
+        {/* Aba de Relatórios */}
+        <Tab eventKey="relatorios" title="Relatórios">
+          <Relatorios />
         </Tab>
       </Tabs>
     </div>

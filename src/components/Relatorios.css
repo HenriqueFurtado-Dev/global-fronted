@@ -1,0 +1,8 @@
+/* src/components/Relatorios.css */
+
+.pie-chart-container {
+    width: 300px; /* Ajuste para o tamanho desejado */
+    height: 300px; /* Ajuste para o tamanho desejado */
+    margin: 0 auto; /* Centraliza o gráfico */
+  }
+  
