@@ -1,29 +1,32 @@
-# Etapa 1: Construir a aplicação usando uma imagem leve
-FROM node:18-alpine as build
+# Etapa 1: Construir a aplicação
+FROM node:18-alpine AS build
 
 # Diretório de trabalho
 WORKDIR /app
 
-# Copiar apenas arquivos necessários para o build
+# Copiar apenas os arquivos necessários para instalar dependências
 COPY package.json package-lock.json ./
 
 # Instalar apenas dependências de produção
 RUN npm install --production
 
-# Copiar o restante do código
+# Copiar todo o restante do código
 COPY . .
 
-# Construir a aplicação
+# Construir a aplicação para produção
 RUN npm run build
 
-# Etapa 2: Servir os arquivos usando o NGINX
+# Etapa 2: Servir a aplicação com NGINX
 FROM nginx:alpine
 
-# Copiar o build otimizado da etapa anterior
+# Remover a configuração padrão do NGINX
+RUN rm -rf /usr/share/nginx/html/*
+
+# Copiar os arquivos estáticos do build para o diretório do NGINX
 COPY --from=build /app/build /usr/share/nginx/html
 
 # Expor a porta 80
 EXPOSE 80
 
-# Comando para rodar o NGINX
+# Comando para rodar o NGINX em primeiro plano
 CMD ["nginx", "-g", "daemon off;"]
