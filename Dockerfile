@@ -1,24 +1,29 @@
-# Usar uma imagem Node.js como base para o build
-FROM node:18 as build
+# Etapa 1: Construir a aplicação usando uma imagem leve
+FROM node:18-alpine as build
 
-# Configurar o diretório de trabalho
+# Diretório de trabalho
 WORKDIR /app
 
-# Copiar os arquivos do projeto para o container
+# Copiar apenas arquivos necessários para o build
 COPY package.json package-lock.json ./
-RUN npm install
 
+# Instalar apenas dependências de produção
+RUN npm install --production
+
+# Copiar o restante do código
 COPY . .
+
+# Construir a aplicação
 RUN npm run build
 
-# Usar uma imagem NGINX para servir os arquivos estáticos
+# Etapa 2: Servir os arquivos usando o NGINX
 FROM nginx:alpine
 
-# Copiar os arquivos do build para o diretório padrão do NGINX
+# Copiar o build otimizado da etapa anterior
 COPY --from=build /app/build /usr/share/nginx/html
 
-# Expor a porta 80 para o container
+# Expor a porta 80
 EXPOSE 80
 
-# Comando padrão para iniciar o NGINX
+# Comando para rodar o NGINX
 CMD ["nginx", "-g", "daemon off;"]
