@@ -4,3 +4,4 @@ build
 *.log
 Dockerfile
 docker-compose.yml
+.env
